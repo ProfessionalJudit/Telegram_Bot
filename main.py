@@ -53,19 +53,33 @@ def process_text(text):
     elif "dema" in reminder_date:
         final_date["Hour"] = 8
         final_date["Minute"] = 0
-        if "passat" in reminder_date
+        if "passat" in reminder_date:
             final_date["Day"] = -2
-        else
+        else:
             final_date["Day"] = -1
-        
-        
-    
-    
+    else:
+        if "dilluns" in reminder_date:
+            final_date["Day"] = 1
+        elif "dimarts" in reminder_date:
+            final_date["Day"] = 2
+        elif "dimecres" in reminder_date:
+            final_date["Day"] = 3
+        elif "dijous" in reminder_date:
+            final_date["Day"] = 4
+        elif "divendres" in reminder_date:
+            final_date["Day"] = 5
+        elif "dissabte" in reminder_date:
+            final_date["Day"] = 6
+        elif "diumenje" in reminder_date:
+            final_date["Day"] = 7
+    #Set Hour (Prepare to get one and two numbers)
+
+
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text="Heya! Use \/help to view all commands. \nSend an audio to create a new entry"
+        text="Heya! Use /help to view all commands. \nSend an audio to create a new entry"
     )   
 
 async def audio_recieved(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -108,7 +122,6 @@ async def audio_recieved(update: Update, context: ContextTypes.DEFAULT_TYPE):
         chat_id=update.effective_chat.id,
         text=text
     )
-       
 
 if __name__ == '__main__':
     application = ApplicationBuilder().token('7582572736:AAFMTYxC0uw434Sc3oUGf48vvb6sdapcbdo').build()
