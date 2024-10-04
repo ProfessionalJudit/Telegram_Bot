@@ -5,11 +5,67 @@ from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, Messa
 import speech_recognition as sr
 import io
 import soundfile as sf
+import datetime
+
+date_keywords = ["avui","d'avui","dema","passat"]
+hour_keywords = ["una","dues","dos","tres","quatre","cinc","sis","set","vuit","nou","deu","onze","dotze"]
+moment_keywords = ["mati","migdia","tarda","vespre","nit"]
+
+
+def process_text(text):
+    word_array = text.split()
+    reminder_date = []
+    reminder_hour = []    
+    reminder_message = ""
+    
+    last_date_element = 0
+    count = 0
+    for i in word_array:
+        if i in date_keywords:
+            reminder_date.append(i)
+            last_date_element = count
+        if i in hour_keywords:
+            reminder_hour.append(i)
+            last_date_element = count
+        count+=1
+    
+    word_array += "."
+    reminder_message = word_array[last_date_element+1:]
+    print(text)
+    print(reminder_date)
+    print(reminder_hour)
+    print(reminder_message)
+    
+    #Day: 1..7 = Dilluns a dimecres, 0..-2 = Avui, dema, dema passat
+    #Hour: 24h format
+    #Minute: 60m
+    final_date = {
+        "Day":  -1,
+        "Hour": 8,
+        "Minute": 0
+    }
+    
+    #Set day
+    if "avui" in reminder_date:
+        final_date["Day"] = 0
+        final_date["Hour"] = datetime.datetime.now().hour
+        final_date["Minute"] = datetime.datetime.now().minute
+    elif "dema" in reminder_date:
+        final_date["Hour"] = 8
+        final_date["Minute"] = 0
+        if "passat" in reminder_date
+            final_date["Day"] = -2
+        else
+            final_date["Day"] = -1
+        
+        
+    
+    
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text="I'm a bot, please talk to me!"
+        text="Heya! Use \/help to view all commands. \nSend an audio to create a new entry"
     )   
 
 async def audio_recieved(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -23,15 +79,11 @@ async def audio_recieved(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     #Convert it to wav format and shove it into a buffer
     data, samplerate = sf.read(bytes_content)
-
     converted_audio = io.BytesIO()
-
     sf.write(converted_audio, data, samplerate,format="WAV",subtype="PCM_16")
-
     converted_audio.seek(0)
     
-    print(update.effective_user.language_code)
-    
+    #Detect Language
     idioma = ""
     if update.effective_user.language_code == "es":
         idioma = "es-ES"
@@ -44,14 +96,14 @@ async def audio_recieved(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     #Speech to text
     r = sr.Recognizer()
-    
     with sr.AudioFile(converted_audio) as source:
         # listen for the data (load audio to memory)
         audio_data = r.record(source)
         # recognize (convert from speech to text)
         text = r.recognize_google(audio_data,language=idioma)
-        print(text)
-
+    
+    process_text(text)
+    
     await context.bot.send_message(
         chat_id=update.effective_chat.id,
         text=text
