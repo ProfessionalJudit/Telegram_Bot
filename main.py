@@ -69,7 +69,7 @@ def process_text(text):
     if "avui" in reminder_date:
         final_date["Day"] = 0
         final_date["Hour"] = datetime.datetime.now().hour + 1
-        final_date["Minute"] = datetime.datetime.now().minute
+        final_date["Minute"] = 0
     elif "dema" in reminder_date:
         final_date["Hour"] = 8
         final_date["Minute"] = 0
@@ -169,8 +169,10 @@ def process_text(text):
                 minute_u = hour_keywords.index(reminder_hour[2])
                 #Començem al 11, so +1 per que els index començen al 0 i +10 per anar a l'onze
                 minute_u += 1
+                
             except ValueError as ve:
                 minute_u = -1
+                
     #Decimes
     minute_dec = -1
     if reminder_hour.__len__() > 1:
@@ -207,7 +209,7 @@ def process_text(text):
     
     if minute_u != -1:
         final_date["Minute"] = minute_u
-                    
+        
     if minute_dec != -1:
         final_date["Minute"] += minute_dec
 
