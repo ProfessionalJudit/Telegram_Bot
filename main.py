@@ -11,7 +11,7 @@ date_keywords = ["avui","d'avui","dema","passat"]
 hour_keywords = ["una","dos","tres","quatre","cinc","sis","set","vuit","nou","deu","onze","dotze",
                 "tretze","catorze","quinze","setze","diset","divuit","dinou","vint","vint-i-un","vint-i-dos",
                 "vint-i-tres","vint-i-quatre","dues","un"]
-min_keywords = ["deu","vint","trenta","quaranta","cincquanta"]
+min_keywords = ["deu","vint","trenta","quaranta","cinquanta"]
 min_keywords_eleven_to_twentynine = ["onze","dotze",
                 "tretze","catorze","quinze","setze","diset","divuit","dinou","vint","vint-i-un","vint-i-dos",
                 "vint-i-tres","vint-i-quatre","vint-i-cinc","vint-i-sis","vint-i-set","vint-i-vuit","vint-i-nou"]
@@ -55,7 +55,7 @@ def process_text(text):
     word_array += "."
     reminder_message = word_array[last_date_element+1:]
     
-    #Day: 1..7 = Dilluns a dimecres, 0..-2 = Avui, dema, dema passat
+    #Day: 1..7 = Dilluns a diumenje, 0..-2 = Avui, dema, dema passat
     #Hour: 24h format
     #Minute: 60m
     final_date = {
