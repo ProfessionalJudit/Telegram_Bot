@@ -286,7 +286,7 @@ async def audio_recieved(update: Update, context: ContextTypes.DEFAULT_TYPE):
     seconds += (final_date["Hour"]) * 3600
     
 
-    context.job_queue.run_once(reminder,100,chat_id=context._chat_id,data=final_date,name="Job "+str(context.job_queue.jobs().__len__()))
+    context.job_queue.run_once(reminder,seconds,chat_id=context._chat_id,data=final_date,name="Job "+str(context.job_queue.jobs().__len__()))
     print(seconds,"\n",final_date,"\n",context.job_queue.jobs())
 
 async def list_jobs(update: Update, context: ContextTypes.DEFAULT_TYPE):
