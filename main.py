@@ -26,7 +26,7 @@ language = "en"
 async def reminder(context):
     job = context.job
     print(job.data)
-    await context.bot.send_message(job.chat_id,text=' '.join( job.data["Message"]))
+    await context.bot.send_message(job.chat_id,text="Recordatori: \""+' '.join( job.data["Message"])+"\"")
     
 def process_text(text):
     word_array = text.split()
@@ -225,7 +225,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     language = update.effective_user.language_code
     await context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text="Heya! Use /help to view all commands. \nSend an audio to create a new entry"
+        text="Heya!\n /list per mostrar els recordatoris pendents\n /delete ID per eleminar un recordator\nTira un audio per començar!"
     )   
 
 async def audio_recieved(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -288,11 +288,6 @@ async def audio_recieved(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     context.job_queue.run_once(reminder,100,chat_id=context._chat_id,data=final_date,name="Job "+str(context.job_queue.jobs().__len__()))
     print(seconds,"\n",final_date,"\n",context.job_queue.jobs())
-
-    await context.bot.send_message(
-        chat_id=update.effective_chat.id,
-        text="WAH!"
-    )
 
 async def list_jobs(update: Update, context: ContextTypes.DEFAULT_TYPE):
         list_str = ""
