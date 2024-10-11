@@ -9,11 +9,11 @@ import datetime
 
 date_keywords = ["avui","d'avui","dema","passat"]
 hour_keywords = ["una","dos","tres","quatre","cinc","sis","set","vuit","nou","deu","onze","dotze",
-                "tretze","catorze","quinze","setze","diset","divuit","dinou","vint","vint-i-un","vint-i-dos",
+                "tretze","catorze","quinze","setze","disset","divuit","dinou","vint","vint-i-un","vint-i-dos",
                 "vint-i-tres","vint-i-quatre","dues","un"]
 min_keywords = ["deu","vint","trenta","quaranta","cinquanta"]
 min_keywords_eleven_to_twentynine = ["onze","dotze",
-                "tretze","catorze","quinze","setze","diset","divuit","dinou","vint","vint-i-un","vint-i-dos",
+                "tretze","catorze","quinze","setze","disset","divuit","dinou","vint","vint-i-un","vint-i-dos",
                 "vint-i-tres","vint-i-quatre","vint-i-cinc","vint-i-sis","vint-i-set","vint-i-vuit","vint-i-nou"]
 moment_keywords = ["matinada","mati","migdia","tarda","vespre","nit"]
 day_keywords = ["dilluns","dimarts","dimecres","dijous","divendres","dissabte","diumenje"]
@@ -274,13 +274,11 @@ async def audio_recieved(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if final_date["Day"] == -2:
             seconds += seconds_until_eod
             seconds += (24 * 3600)
-    else:
-        if seconds == 0:
-            seconds += 3600
+
     
-    seconds += (final_date["Minute"]) * 60
-    seconds += (final_date["Hour"]) * 3600
-    
+    seconds += (final_date["Minute"] -(datetime.datetime.today().minute)) * 60
+    seconds += (datetime.datetime.today().hour - final_date["Hour"]) * 3600
+    print(seconds)
 
     context.job_queue.run_once(reminder,seconds,chat_id=context._chat_id,data=final_date,name="Job "+str(context.job_queue.jobs().__len__()))
 
