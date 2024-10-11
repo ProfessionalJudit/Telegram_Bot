@@ -1,8 +1,5 @@
 #AAFMTYxC0uw434Sc3oUGf48vvb6sdapcbdo
-from ast import keyword
-from email import message
 
-from h11 import Request
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, filters, Job
 import speech_recognition as sr
@@ -21,7 +18,6 @@ min_keywords_eleven_to_twentynine = ["onze","dotze",
 moment_keywords = ["matinada","mati","migdia","tarda","vespre","nit"]
 day_keywords = ["dilluns","dimarts","dimecres","dijous","divendres","dissabte","diumenje"]
 
-language = "en"
 
 async def reminder(context):
     job = context.job
@@ -222,7 +218,6 @@ def process_text(text):
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    language = update.effective_user.language_code
     await context.bot.send_message(
         chat_id=update.effective_chat.id,
         text="Heya!\n /list per mostrar els recordatoris pendents\n /delete ID per eleminar un recordator\nTira un audio per començar!"
@@ -252,12 +247,11 @@ async def audio_recieved(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # listen for the data (load audio to memory)
         audio_data = r.record(source)
         # recognize (convert from speech to text)
-
         text = r.recognize_google(audio_data,language="ca")
     
     #We be printin
     final_date = process_text(text)
-
+    print(final_date)
     #Day: 1..7 = Dilluns a dimecres, 0..-2 = Avui, dema, dema passat
     chat_id = update.message.chat_id
     seconds = 0
@@ -287,7 +281,6 @@ async def audio_recieved(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
 
     context.job_queue.run_once(reminder,seconds,chat_id=context._chat_id,data=final_date,name="Job "+str(context.job_queue.jobs().__len__()))
-    print(seconds,"\n",final_date,"\n",context.job_queue.jobs())
 
 async def list_jobs(update: Update, context: ContextTypes.DEFAULT_TYPE):
         list_str = ""
@@ -297,7 +290,7 @@ async def list_jobs(update: Update, context: ContextTypes.DEFAULT_TYPE):
             list_str = "No reminders active!"
         await context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text=+list_str
+        text=list_str
     )
 
 async def delete_jobs(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -322,5 +315,4 @@ if __name__ == '__main__':
     application.add_handler(MessageHandler(filters.VOICE, audio_recieved))
     application.add_handler(CommandHandler('delete', delete_jobs))
     application.add_handler(CommandHandler('list', list_jobs))
-    #TODO: QUADRAR SEGONS JOBS
     application.run_polling()
