@@ -1,5 +1,8 @@
 #AAFMTYxC0uw434Sc3oUGf48vvb6sdapcbdo
+from ast import keyword
 from email import message
+
+from h11 import Request
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, filters, Job
 import speech_recognition as sr
@@ -10,12 +13,13 @@ import datetime
 date_keywords = ["avui","d'avui","dema","passat"]
 hour_keywords = ["una","dos","tres","quatre","cinc","sis","set","vuit","nou","deu","onze","dotze",
                 "tretze","catorze","quinze","setze","diset","divuit","dinou","vint","vint-i-un","vint-i-dos",
-                "vint-i-tres","vint-i-quatre","dues"]
+                "vint-i-tres","vint-i-quatre","dues","un"]
 min_keywords = ["deu","vint","trenta","quaranta","cincquanta"]
 min_keywords_eleven_to_twentynine = ["onze","dotze",
                 "tretze","catorze","quinze","setze","diset","divuit","dinou","vint","vint-i-un","vint-i-dos",
                 "vint-i-tres","vint-i-quatre","vint-i-cinc","vint-i-sis","vint-i-set","vint-i-vuit","vint-i-nou"]
 moment_keywords = ["matinada","mati","migdia","tarda","vespre","nit"]
+day_keywords = ["dilluns","dimarts","dimecres","dijous","divendres","dissabte","diumenje"]
 
 language = "en"
 
@@ -30,10 +34,13 @@ def process_text(text):
     reminder_hour = []   
     reminder_moment = [] 
     reminder_message = ""
-    
+    reminder_day = []
     last_date_element = 0
     count = 0
     for i in word_array:
+        if i in day_keywords:
+            reminder_day.append(i)
+            last_date_element = count
         if i in date_keywords:
             reminder_date.append(i)
             last_date_element = count
@@ -75,19 +82,19 @@ def process_text(text):
         else:
             final_date["Day"] = -1
     else:
-        if "dilluns" in reminder_date:
+        if "dilluns" in reminder_day:
             final_date["Day"] = 1
-        elif "dimarts" in reminder_date:
+        elif "dimarts" in reminder_day:
             final_date["Day"] = 2
-        elif "dimecres" in reminder_date:
+        elif "dimecres" in reminder_day:
             final_date["Day"] = 3
-        elif "dijous" in reminder_date:
+        elif "dijous" in reminder_day:
             final_date["Day"] = 4
-        elif "divendres" in reminder_date:
+        elif "divendres" in reminder_day:
             final_date["Day"] = 5
-        elif "dissabte" in reminder_date:
+        elif "dissabte" in reminder_day:
             final_date["Day"] = 6
-        elif "diumenje" in reminder_date:
+        elif "diumenje" in reminder_day:
             final_date["Day"] = 7
     
     #Set Hour (Prepare to get one and two numbers)
@@ -100,6 +107,8 @@ def process_text(text):
             hour = -1
         if hour == 25:
             hour = 2
+        if hour == 26:
+            hour = 1
         if hour == 24:
             hour = 0
     
@@ -152,14 +161,7 @@ def process_text(text):
                         hour = 3
                     final_date["Hour"] = hour
     elif reminder_moment.__len__() == 0:
-        if hour == -1:
-            final_date["Hour"] = 8
-        else:
-            if hour >= 12:
-                final_date["Hour"] = hour
-            elif hour <= 7:
-                hour += 12
-                final_date["Hour"] = hour
+        final_date["Hour"] = hour
         
     
     #Unitats
@@ -173,7 +175,6 @@ def process_text(text):
                 minute_u += 1
             except ValueError as ve:
                 minute_u = -1
-    print(reminder_hour)
     #Decimes
     minute_dec = -1
     if reminder_hour.__len__() > 1:
@@ -208,15 +209,13 @@ def process_text(text):
             except ValueError as ve:
                 minute_dec = -1
     
-    if minute_u == -1:
-        final_date["Minute"] = 0
-    else:
+    if minute_u != -1:
         final_date["Minute"] = minute_u
                     
     if minute_dec != -1:
         final_date["Minute"] += minute_dec
 
-    
+    print(reminder_date," ", reminder_hour," ",text)
     #print(minute_dec,":",minute_u,final_date,end="\n")
     return final_date
     
@@ -253,33 +252,41 @@ async def audio_recieved(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # listen for the data (load audio to memory)
         audio_data = r.record(source)
         # recognize (convert from speech to text)
+
         text = r.recognize_google(audio_data,language="ca")
     
     #We be printin
     final_date = process_text(text)
 
-    #Finally, we be sending
+    #Day: 1..7 = Dilluns a dimecres, 0..-2 = Avui, dema, dema passat
     chat_id = update.message.chat_id
     seconds = 0
-    #Day: 1..7 = Dilluns a dimecres, 0..-2 = Avui, dema, dema passat
+    seconds_until_eod = (24*3600 - (datetime.datetime.today().hour +1) * 3600)
+    seconds_until_eod += datetime.datetime.today().minute * 60
+    
     if final_date["Day"] > 0:
-        seconds += (datetime.datetime.today().weekday() + 1 - final_date["Day"]) * 86400
+        seconds += seconds_until_eod
+        if (datetime.datetime.today().weekday() + 1) < final_date["Day"]:
+            seconds += ((datetime.datetime.today().weekday() + 1) - final_date["Day"]) * 86400 
+        elif (datetime.datetime.today().weekday() + 1) > final_date["Day"]:
+            seconds += 6 * 86400
+            s_difference = ((datetime.datetime.today().weekday() + 1) - final_date["Day"]) 
+            seconds -= s_difference * 86400
     elif final_date["Day"] < 0:
         if final_date["Day"] == -1:
-            pass
+            seconds += seconds_until_eod
         if final_date["Day"] == -2:
-            seconds += (datetime.datetime.today().hour + 1) * 3600
-            seconds *= 2
-            seconds += 8 * 3600
+            seconds += seconds_until_eod
+            seconds += (24 * 3600)
     else:
         if seconds == 0:
-            seconds = 3600
+            seconds += 3600
     
     seconds += (final_date["Minute"]) * 60
-    seconds += (final_date["Hour"]) * 3600 + ((datetime.datetime.today().hour +1) * 3600 - 24*3600)
+    seconds += (final_date["Hour"]) * 3600
     
 
-    context.job_queue.run_once(reminder,1,chat_id=context._chat_id,data=final_date,name="ID_"+str(context.job_queue.jobs().__len__()))
+    context.job_queue.run_once(reminder,100,chat_id=context._chat_id,data=final_date,name="Job "+str(context.job_queue.jobs().__len__()))
     print(seconds,"\n",final_date,"\n",context.job_queue.jobs())
 
     await context.bot.send_message(
@@ -287,11 +294,38 @@ async def audio_recieved(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text="WAH!"
     )
 
+async def list_jobs(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        list_str = ""
+        for i in context.job_queue.jobs():
+            list_str += i.name + ": " + str(i.data["Message"]) + "\n"
+        if context.job_queue.jobs().__len__() == 0:
+            list_str = "No reminders active!"
+        await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text=+list_str
+    )
+
+async def delete_jobs(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        if context.args.__len__() > 0:
+            current_jobs = context.job_queue.get_jobs_by_name("Job "+context.args[0])[0].schedule_removal()
+            
+            await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="Job deleted!")
+        else:
+            await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="Error! Could not delete")
+        
+
+    
+
 if __name__ == '__main__':
     application = ApplicationBuilder().token('7582572736:AAFMTYxC0uw434Sc3oUGf48vvb6sdapcbdo').build()
     start_handler = CommandHandler('start',start)
     application.add_handler(start_handler)  
     application.add_handler(MessageHandler(filters.VOICE, audio_recieved))
-    
+    application.add_handler(CommandHandler('delete', delete_jobs))
+    application.add_handler(CommandHandler('list', list_jobs))
     #TODO: QUADRAR SEGONS JOBS
     application.run_polling()
